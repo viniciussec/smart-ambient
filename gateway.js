@@ -3,7 +3,7 @@ const readline = require("readline");
 const udp = require("dgram");
 const protobuf = require("protobufjs");
 
-const udpServer = udp.createSocket("udp4");
+const udpServer = udp.createSocket({ type: "udp4", reuseAddr: true });
 
 const PORT = 41848;
 const MCAST_ADDR = "230.185.192.108";
@@ -51,22 +51,31 @@ net
       splittedData = data.split(" ");
       switch (splittedData[0]) {
         case "/TEMPERATURE":
-          equipments[id].info =
-            "Temperatura é de: " + splittedData[1] + " graus";
+          if (equipments[id].type === "TEMPERATURE") {
+            equipments[id].info =
+              "Temperatura é de: " + splittedData[1] + " graus";
+          }
           break;
+
         case "/LAMP":
-          equipments[id].info =
-            splittedData[1] === "ON" ? "Ligado" : "Desligado";
-          console.log(equipments[id].info);
+          if (equipments[id].type === "LAMP") {
+            equipments[id].info =
+              splittedData[1] === "ON" ? "Ligado" : "Desligado";
+            console.log(equipments[id].info);
+          }
           break;
+
         case "/AC":
-          equipments[id].info =
-            "AC configurado em " + splittedData[1] + " graus";
-          console.log(equipments[id].info);
+          if (equipments[id].type === "AC") {
+            equipments[id].info =
+              "AC configurado em " + splittedData[1] + " graus";
+            console.log(equipments[id].info);
+          }
           break;
 
         default:
           console.log(data);
+          break;
       }
     });
 
@@ -79,29 +88,23 @@ net
       const splittedData = data.split(" ");
       switch (splittedData[0]) {
         case "/LAMP":
-          equipments.forEach(async (equipment) => {
-            if (equipment.type === "LAMP") {
-              const msg = await encodeProtobuf({ message: data });
-              equipment.write(msg);
-            }
-          });
+          if (socket.type === "LAMP") {
+            const msg = await encodeProtobuf({ message: data });
+            socket.write(msg);
+          }
           break;
         case "/TEMPERATURE":
-          equipments.forEach((equipment) => {
-            if (equipment.type === "TEMPERATURE_SENSOR")
-              console.log(equipment.info);
-          });
+          if (socket.type === "TEMPERATURE_SENSOR") console.log(socket.info);
           break;
         case "/AC":
-          equipments.forEach(async (equipment) => {
-            if (equipment.type === "AC") {
-              const msg = await encodeProtobuf({ message: data });
-              equipment.write(msg);
-            }
-          });
+          if (socket.type === "AC") {
+            const msg = await encodeProtobuf({ message: data });
+            socket.write(msg);
+          }
+
           break;
         default:
-          console.log("Comando desconhecido");
+          console.log("Comando desconhecido!!!");
       }
     });
 

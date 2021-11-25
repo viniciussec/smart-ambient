@@ -8,7 +8,7 @@ const PORT = 41848;
 const MCAST_ADDR = "230.185.192.108";
 const HOST = "localhost";
 
-const clientUDP = dgram.createSocket("udp4");
+const clientUDP = dgram.createSocket({ type: "udp4", reuseAddr: true });
 clientUDP.on("listening", function () {
   const address = clientUDP.address();
   console.log("Aguardando conexão...");
