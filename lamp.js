@@ -1,5 +1,6 @@
 const dgram = require("dgram");
 const net = require("net");
+const protobuf = require("protobufjs");
 
 const PORT = 41848;
 const MCAST_ADDR = "230.185.192.108";
@@ -26,15 +27,29 @@ clientUDP.once("message", function (message, remote) {
     console.log("O equipamento está conectado");
   });
 
-  client.on("data", function (data) {
-    data = JSON.parse(data.toString()).message;
+  client.on("data", async function (data) {
+    data = (await decodeProtobuf(data)).message;
     const splittedData = data.split(" ");
     const state = splittedData[1];
 
     const info = state === "ON" ? "Lâmpada ligada" : "Lampada desligada";
     console.log(info);
-    client.write(Buffer.from(JSON.stringify({ message: data })));
+    client.write(await encodeProtobuf({ message: data }));
   });
 });
 
 clientUDP.bind(PORT, MCAST_ADDR);
+
+async function decodeProtobuf(obj) {
+  const root = await protobuf.load("message.proto");
+
+  const Message = root.lookupType("userpackage.Message");
+  return Message.decode(obj);
+}
+
+async function encodeProtobuf(obj) {
+  const root = await protobuf.load("message.proto");
+
+  const Message = root.lookupType("userpackage.Message");
+  return Message.encode(obj).finish();
+}

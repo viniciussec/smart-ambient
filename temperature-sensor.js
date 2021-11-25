@@ -1,5 +1,7 @@
 const net = require("net");
 const dgram = require("dgram");
+const protobuf = require("protobufjs");
+
 const client = new net.Socket();
 
 const PORT = 41848;
@@ -26,18 +28,32 @@ clientUDP.once("message", function (message, remote) {
     console.log("O equipamento está conectado");
   });
 
-  client.on("data", function (data) {
+  client.on("data", async function (data) {
     data = JSON.parse(data.toString()).message;
-    client.write(Buffer.from(JSON.stringify({ message: data })));
+    send(data);
   });
 
-  setInterval(function () {
+  setInterval(async function () {
     send("/TEMPERATURE " + `${20 + Math.random()}`.substring(0, 5));
   }, 3000);
 
-  function send(msg) {
-    client.write(Buffer.from(JSON.stringify({ message: msg })));
+  async function send(msg) {
+    client.write(await encodeProtobuf({ message: msg }));
   }
 });
 
 clientUDP.bind(PORT, MCAST_ADDR);
+
+async function decodeProtobuf(obj) {
+  const root = await protobuf.load("message.proto");
+
+  const Message = root.lookupType("userpackage.Message");
+  return Message.decode(obj);
+}
+
+async function encodeProtobuf(obj) {
+  const root = await protobuf.load("message.proto");
+
+  const Message = root.lookupType("userpackage.Message");
+  return Message.encode(obj).finish();
+}

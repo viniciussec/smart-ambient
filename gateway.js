@@ -1,7 +1,7 @@
 const net = require("net");
 const readline = require("readline");
 const udp = require("dgram");
-// const protobuf = require("protobufjs");
+const protobuf = require("protobufjs");
 
 const udpServer = udp.createSocket("udp4");
 
@@ -46,8 +46,8 @@ net
 
     equipments.push(socket);
 
-    socket.on("data", function (data) {
-      data = JSON.parse(data.toString()).message;
+    socket.on("data", async function (data) {
+      data = (await decodeProtobuf(data)).message;
       splittedData = data.split(" ");
       switch (splittedData[0]) {
         case "/TEMPERATURE":
@@ -75,13 +75,15 @@ net
       socket[id] = null;
     });
 
-    rl.on("line", function (data) {
+    rl.on("line", async function (data) {
       const splittedData = data.split(" ");
       switch (splittedData[0]) {
         case "/LAMP":
-          equipments.forEach((equipment) => {
-            if (equipment.type === "LAMP")
-              equipment.write(Buffer.from(JSON.stringify({ message: data })));
+          equipments.forEach(async (equipment) => {
+            if (equipment.type === "LAMP") {
+              const msg = await encodeProtobuf({ message: data });
+              equipment.write(msg);
+            }
           });
           break;
         case "/TEMPERATURE":
@@ -91,15 +93,24 @@ net
           });
           break;
         case "/AC":
-          equipments.forEach((equipment) => {
-            if (equipment.type === "AC")
-              equipment.write(Buffer.from(JSON.stringify({ message: data })));
+          equipments.forEach(async (equipment) => {
+            if (equipment.type === "AC") {
+              const msg = await encodeProtobuf({ message: data });
+              equipment.write(msg);
+            }
           });
           break;
         default:
           console.log("Comando desconhecido");
       }
     });
+
+    async function decodeProtobuf(obj) {
+      const root = await protobuf.load("message.proto");
+
+      const Message = root.lookupType("userpackage.Message");
+      return Message.decode(obj);
+    }
 
     async function encodeProtobuf(obj) {
       const root = await protobuf.load("message.proto");
