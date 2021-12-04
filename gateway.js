@@ -22,7 +22,6 @@ udpServer.bind(PORT, function () {
 function broadcastNew() {
   const message = Buffer.from(JSON.stringify({ message: "/IDENTIFY" }));
   udpServer.send(message, 0, message.length, PORT, MCAST_ADDR);
-  // console.log("Sent " + message + " to the wire...");
 }
 
 setInterval(broadcastNew, 3000);

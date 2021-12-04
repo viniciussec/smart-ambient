@@ -44,13 +44,6 @@ clientUDP.once("message", function (message, remote) {
 
 clientUDP.bind(PORT, MCAST_ADDR);
 
-async function decodeProtobuf(obj) {
-  const root = await protobuf.load("message.proto");
-
-  const Message = root.lookupType("userpackage.Message");
-  return Message.decode(obj);
-}
-
 async function encodeProtobuf(obj) {
   const root = await protobuf.load("message.proto");
 
