@@ -50,7 +50,7 @@ net
       splittedData = data.split(" ");
       switch (splittedData[0]) {
         case "/TEMPERATURE":
-          if (equipments[id].type === "TEMPERATURE") {
+          if (equipments[id].type === "TEMPERATURE_SENSOR") {
             equipments[id].info =
               "Temperatura é de: " + splittedData[1] + " graus";
           }
